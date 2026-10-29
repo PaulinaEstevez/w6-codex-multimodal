@@ -12,7 +12,7 @@
       <header>
         <p class="eyebrow">A closer look</p>
         <h1>Image Describer</h1>
-        <p class="intro">Choose a picture and get a simple description with Ollama.</p>
+        <p class="intro">Choose two pictures and get a simple description of each with Ollama.</p>
       </header>
 
       <section class="card" aria-labelledby="image-heading">
@@ -25,7 +25,8 @@
           <p>Your image preview will appear here.</p>
         </div>
 
-        <button id="describe-button" type="button" disabled aria-describedby="status">Describe Images</button>
+        <button id="describe-button" type="button" aria-describedby="processing-status">Describe Images</button>
+        <p class="status" id="processing-status" role="status">Choose both images, then click Describe Images.</p>
         <p class="status" id="status" role="status">Choose a JPG or PNG image to preview it.</p>
       </section>
 
@@ -40,7 +41,7 @@
         <h2 id="image-2-heading">Image 2</h2>
         <label for="image-2-input">Choose Image 2</label>
         <input id="image-2-input" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" aria-describedby="image-2-help">
-        <p class="hint" id="image-2-help">Choose a second JPG or PNG image (optional).</p>
+        <p class="hint" id="image-2-help">Choose a second JPG or PNG image. Both images are required.</p>
         <div class="image-preview" id="image-2-preview" role="region" aria-label="Image 2 preview">
           <p>Your image preview will appear here.</p>
         </div>

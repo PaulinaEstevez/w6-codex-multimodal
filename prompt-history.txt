@@ -20,3 +20,4 @@ Add a second image input and preview to my page. Label them Image 1 and Image 2.
 prompt 3:
 Now help me process both images. Use the same Ollama model. Send Image 1 in one request, then Image 2 in another request. Show each description below the correct image, with clear Image 1 and Image 2 labels. Keep both previews visible. Do not mix the answers. Explain how the code keeps them separate. Do not commit or push.
 prompt 4:
+Help me check the two-image version. If no images are selected, ask me to choose both. If only one is selected, tell me which image is missing and do not start processing. While the requests run, disable the button and both image inputs. Show which image is being processed. If one request fails, keep any successful description and show which image failed. Make the controls work again when processing ends. Do not commit or push.

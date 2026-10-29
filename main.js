@@ -1,4 +1,5 @@
 const describeButton = document.querySelector('#describe-button');
+const processingStatus = document.querySelector('#processing-status');
 let processing = false;
 
 // Each slot keeps its own picture, answer area, and reading state together.
@@ -20,8 +21,9 @@ const images = [
 }));
 
 function updateButton() {
-  describeButton.disabled = processing || !images.some((slot) => slot.data);
+  describeButton.disabled = processing;
   describeButton.textContent = processing ? 'Describing…' : 'Describe Images';
+  images.forEach((slot) => { slot.input.disabled = processing; });
 }
 
 function showPlaceholder(slot) {
@@ -32,6 +34,7 @@ function showPlaceholder(slot) {
 
 images.forEach((slot) => {
   slot.input.addEventListener('change', () => {
+    processingStatus.textContent = 'Choose both images, then click Describe Images.';
     const selection = ++slot.selectionId;
     if (slot.reader) slot.reader.abort();
     if (slot.request) slot.request.abort();
@@ -96,7 +99,6 @@ async function describeImage(job) {
   if (selection !== slot.selectionId) return;
   const controller = new AbortController();
   slot.request = controller;
-  slot.description.textContent = '';
   slot.status.textContent = `Describing ${slot.label}. This may take a moment…`;
 
   try {
@@ -125,11 +127,13 @@ async function describeImage(job) {
     if (selection !== slot.selectionId) return;
     slot.description.textContent = data.message.content;
     slot.status.textContent = `${slot.label} description ready.`;
+    return true;
   } catch (error) {
     if (selection !== slot.selectionId) return;
     slot.status.textContent = error instanceof TypeError
       ? `Could not reach Ollama for ${slot.label}. Check that it is running and allows requests from this webpage.`
       : `Could not describe ${slot.label}: ${error.message}`;
+    return false;
   } finally {
     if (slot.request === controller) slot.request = null;
   }
@@ -137,20 +141,34 @@ async function describeImage(job) {
 
 describeButton.addEventListener('click', async () => {
   if (processing) return;
+  const missing = images.filter((slot) => !slot.data);
+  if (missing.length) {
+    processingStatus.textContent = missing.length === 2
+      ? 'Please choose both Image 1 and Image 2 as JPG or PNG images and wait for their previews.'
+      : `Please choose ${missing[0].label} as a JPG or PNG image and wait for its preview.`;
+    return;
+  }
   // Capture each picture and its destination together, in Image 1 / Image 2 order.
-  const jobs = images.filter((slot) => slot.data).map((slot) => ({
+  const jobs = images.map((slot) => ({
     slot, data: slot.data, selection: slot.selectionId,
   }));
-  if (!jobs.length) return;
   processing = true;
   updateButton();
+  const failed = [];
   try {
     for (const job of jobs) {
+      processingStatus.textContent = `Processing ${job.slot.label} of 2…`;
       // Wait for this request to finish before starting the next one.
-      await describeImage(job);
+      const success = await describeImage(job);
+      if (!success) failed.push(job.slot.label);
     }
+    processingStatus.textContent = failed.length
+      ? `Finished. Failed: ${failed.join(', ')}. Any successful descriptions have been kept.`
+      : 'Finished. Both image descriptions are ready.';
   } finally {
     processing = false;
     updateButton();
   }
 });
+
+updateButton();
