@@ -134,3 +134,74 @@ describeButton.addEventListener('click', async () => {
     }
   }
 });
+
+// Image 2 has its own data and reading state. Ollama still uses Image 1 only.
+const secondImage = {
+  input: document.querySelector('#image-2-input'),
+  preview: document.querySelector('#image-2-preview'),
+  status: document.querySelector('#image-2-status'),
+  description: document.querySelector('#image-2-description'),
+  data: null,
+  reader: null,
+  selectionId: 0,
+};
+
+function resetSecondPreview() {
+  const message = document.createElement('p');
+  message.textContent = 'Your image preview will appear here.';
+  secondImage.preview.replaceChildren(message);
+}
+
+secondImage.input.addEventListener('change', () => {
+  const currentSelection = ++secondImage.selectionId;
+  if (secondImage.reader) secondImage.reader.abort();
+  secondImage.reader = null;
+  secondImage.data = null;
+  resetSecondPreview();
+  secondImage.description.textContent = '';
+
+  const file = secondImage.input.files[0];
+  if (!file) {
+    secondImage.status.textContent = 'Choose a JPG or PNG image to preview it.';
+    return;
+  }
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    secondImage.status.textContent = 'This file cannot be used. Please choose a JPG or PNG image.';
+    secondImage.input.value = '';
+    return;
+  }
+
+  function showError() {
+    if (currentSelection !== secondImage.selectionId) return;
+    secondImage.reader = null;
+    secondImage.data = null;
+    resetSecondPreview();
+    secondImage.input.value = '';
+    secondImage.status.textContent = 'This image could not be read. Try another JPG or PNG image.';
+  }
+
+  const reader = new FileReader();
+  secondImage.reader = reader;
+  secondImage.status.textContent = 'Reading your image…';
+  reader.addEventListener('error', showError);
+  reader.addEventListener('load', () => {
+    if (currentSelection !== secondImage.selectionId) return;
+    secondImage.reader = null;
+    const dataUrl = reader.result;
+    const image = new Image();
+    image.alt = `Image 2 preview of ${file.name}`;
+    image.addEventListener('error', showError);
+    image.addEventListener('load', () => {
+      if (currentSelection !== secondImage.selectionId) return;
+      secondImage.data = {
+        name: file.name,
+        dataUrl,
+        base64: dataUrl.slice(dataUrl.indexOf(',') + 1),
+      };
+      secondImage.preview.replaceChildren(image);
+      secondImage.status.textContent = 'Image 2 ready. Descriptions for Image 2 are not connected yet.';
+    });
+    image.src = dataUrl;
+  });
+  reader.readAsDataURL(file);
+});

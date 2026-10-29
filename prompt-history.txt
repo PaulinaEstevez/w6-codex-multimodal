@@ -13,3 +13,7 @@ Before changing my code, show me how the image request to Ollama should look. Ex
 promopt 6:
 Now connect my Describe Image button to Ollama. Ask the model to describe the image in simple words. Show message.content on my page using textContent. Check if the request fails and show an error message. Keep the image preview. Explain the code. Do not commit or push.
 TASK 2 
+prompt 1:
+I need to choose two images, see both previews, and get a separate description for each image. Explain how we can keep each image and its answer together. Also explain what we should do if only one image is selected. Do not change the code yet.
+prompt 2:
+Add a second image input and preview to my page. Label them Image 1 and Image 2. Keep the data for each image separate. When I change one image, update its preview and clear its old description. Keep the JPG and PNG checks. Do not change the Ollama requests yet. Explain the changes. Do not commit or push.
