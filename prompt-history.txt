@@ -17,3 +17,6 @@ prompt 1:
 I need to choose two images, see both previews, and get a separate description for each image. Explain how we can keep each image and its answer together. Also explain what we should do if only one image is selected. Do not change the code yet.
 prompt 2:
 Add a second image input and preview to my page. Label them Image 1 and Image 2. Keep the data for each image separate. When I change one image, update its preview and clear its old description. Keep the JPG and PNG checks. Do not change the Ollama requests yet. Explain the changes. Do not commit or push.
+prompt 3:
+Now help me process both images. Use the same Ollama model. Send Image 1 in one request, then Image 2 in another request. Show each description below the correct image, with clear Image 1 and Image 2 labels. Keep both previews visible. Do not mix the answers. Explain how the code keeps them separate. Do not commit or push.
+prompt 4:

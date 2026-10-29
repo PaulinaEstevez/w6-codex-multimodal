@@ -1,95 +1,103 @@
-const imageInput = document.querySelector('#image-input');
-const preview = document.querySelector('#image-preview');
-const statusMessage = document.querySelector('#status');
-const description = document.querySelector('#description');
 const describeButton = document.querySelector('#describe-button');
+let processing = false;
 
-// The preview uses dataUrl; Ollama receives only the Base64 portion.
-let selectedImage = null; // { name, dataUrl, base64 }
-let activeReader = null;
-let activeRequest = null;
-let selectionId = 0;
+// Each slot keeps its own picture, answer area, and reading state together.
+const images = [
+  { label: 'Image 1', inputId: 'image-input', previewId: 'image-preview',
+    statusId: 'status', descriptionId: 'description' },
+  { label: 'Image 2', inputId: 'image-2-input', previewId: 'image-2-preview',
+    statusId: 'image-2-status', descriptionId: 'image-2-description' },
+].map((slot) => ({
+  label: slot.label,
+  input: document.getElementById(slot.inputId),
+  preview: document.getElementById(slot.previewId),
+  status: document.getElementById(slot.statusId),
+  description: document.getElementById(slot.descriptionId),
+  data: null,
+  reader: null,
+  selectionId: 0,
+  request: null,
+}));
 
-function showPlaceholder() {
-  const message = document.createElement('p');
-  message.textContent = 'Your image preview will appear here.';
-  preview.replaceChildren(message);
+function updateButton() {
+  describeButton.disabled = processing || !images.some((slot) => slot.data);
+  describeButton.textContent = processing ? 'Describing…' : 'Describe Images';
 }
 
-imageInput.addEventListener('change', () => {
-  const currentSelection = ++selectionId;
-  if (activeRequest) activeRequest.abort();
-  activeRequest = null;
-  describeButton.disabled = true;
-  describeButton.textContent = 'Describe Image';
-  if (activeReader) activeReader.abort();
-  activeReader = null;
-  selectedImage = null;
-  showPlaceholder();
-  description.replaceChildren();
+function showPlaceholder(slot) {
+  const message = document.createElement('p');
+  message.textContent = 'Your image preview will appear here.';
+  slot.preview.replaceChildren(message);
+}
 
-  const file = imageInput.files[0];
-  if (!file) {
-    statusMessage.textContent = 'Choose a JPG or PNG image to preview it.';
-    return;
-  }
+images.forEach((slot) => {
+  slot.input.addEventListener('change', () => {
+    const selection = ++slot.selectionId;
+    if (slot.reader) slot.reader.abort();
+    if (slot.request) slot.request.abort();
+    slot.reader = null;
+    slot.data = null;
+    slot.description.textContent = '';
+    showPlaceholder(slot);
+    updateButton();
 
-  if (!['image/jpeg', 'image/png'].includes(file.type)) {
-    statusMessage.textContent = 'This file cannot be used. Please choose a JPG or PNG image.';
-    imageInput.value = '';
-    return;
-  }
+    const file = slot.input.files[0];
+    if (!file) {
+      slot.status.textContent = 'Choose a JPG or PNG image to preview it.';
+      return;
+    }
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      slot.status.textContent = 'This file cannot be used. Please choose a JPG or PNG image.';
+      slot.input.value = '';
+      return;
+    }
 
-  const reader = new FileReader();
-  activeReader = reader;
-  statusMessage.textContent = 'Reading your image…';
+    function showError() {
+      if (selection !== slot.selectionId) return;
+      slot.reader = null;
+      slot.data = null;
+      slot.input.value = '';
+      showPlaceholder(slot);
+      slot.status.textContent = 'This image could not be read. Try another JPG or PNG image.';
+      updateButton();
+    }
 
-  function showReadError() {
-    if (currentSelection !== selectionId) return;
-    activeReader = null;
-    selectedImage = null;
-    showPlaceholder();
-    imageInput.value = '';
-    statusMessage.textContent = 'This image could not be read. Try another JPG or PNG image.';
-  }
-
-  reader.addEventListener('error', showReadError);
-  reader.addEventListener('load', () => {
-    if (currentSelection !== selectionId) return;
-    activeReader = null;
-    const dataUrl = reader.result;
-    const image = new Image();
-    image.alt = `Preview of ${file.name}`;
-
-    // Check that the browser can actually display the file before keeping it.
-    image.addEventListener('error', showReadError);
-    image.addEventListener('load', () => {
-      if (currentSelection !== selectionId) return;
-      selectedImage = {
-        name: file.name,
-        dataUrl,
-        base64: dataUrl.slice(dataUrl.indexOf(',') + 1),
-      };
-      preview.replaceChildren(image);
-      describeButton.disabled = false;
-      statusMessage.textContent = 'Image ready. Click Describe Image to get a description.';
+    const reader = new FileReader();
+    slot.reader = reader;
+    slot.status.textContent = 'Reading your image…';
+    reader.addEventListener('error', showError);
+    reader.addEventListener('load', () => {
+      if (selection !== slot.selectionId) return;
+      slot.reader = null;
+      const dataUrl = reader.result;
+      const image = new Image();
+      image.alt = `${slot.label} preview of ${file.name}`;
+      image.addEventListener('error', showError);
+      image.addEventListener('load', () => {
+        if (selection !== slot.selectionId) return;
+        slot.data = {
+          name: file.name,
+          dataUrl,
+          base64: dataUrl.slice(dataUrl.indexOf(',') + 1),
+        };
+        slot.preview.replaceChildren(image);
+        slot.status.textContent = `${slot.label} ready. Click Describe Images.`;
+        updateButton();
+      });
+      image.src = dataUrl;
     });
-    image.src = dataUrl;
+    reader.readAsDataURL(file);
   });
-
-  reader.readAsDataURL(file);
 });
 
-describeButton.addEventListener('click', async () => {
-  if (!selectedImage || activeRequest) return;
-
-  const currentSelection = selectionId;
+async function describeImage(job) {
+  const { slot, data: imageData, selection } = job;
+  // Skip an image replaced after the button was clicked.
+  if (selection !== slot.selectionId) return;
   const controller = new AbortController();
-  activeRequest = controller;
-  describeButton.disabled = true;
-  describeButton.textContent = 'Describing…';
-  description.textContent = '';
-  statusMessage.textContent = 'Ollama is describing your image. This may take a moment…';
+  slot.request = controller;
+  slot.description.textContent = '';
+  slot.status.textContent = `Describing ${slot.label}. This may take a moment…`;
 
   try {
     const response = await fetch('http://localhost:11434/api/chat', {
@@ -101,107 +109,48 @@ describeButton.addEventListener('click', async () => {
         messages: [{
           role: 'user',
           content: 'Describe this image in simple words.',
-          images: [selectedImage.base64],
+          images: [imageData.base64],
         }],
         stream: false,
       }),
     });
-
     if (!response.ok) {
       throw new Error(`Ollama returned an error (HTTP ${response.status}).`);
     }
-
     const data = await response.json();
     if (data.error) throw new Error(String(data.error));
     if (typeof data.message?.content !== 'string' || !data.message.content.trim()) {
       throw new Error('Ollama did not return a description. Please try again.');
     }
-    if (currentSelection !== selectionId) return;
-
-    // Display the model's answer as plain text, never as HTML.
-    description.textContent = data.message.content;
-    statusMessage.textContent = 'Description ready.';
+    if (selection !== slot.selectionId) return;
+    slot.description.textContent = data.message.content;
+    slot.status.textContent = `${slot.label} description ready.`;
   } catch (error) {
-    if (currentSelection !== selectionId) return;
-    statusMessage.textContent = error instanceof TypeError
-      ? 'Could not reach Ollama. Check that it is running and allows requests from this webpage.'
-      : `Could not describe the image: ${error.message}`;
+    if (selection !== slot.selectionId) return;
+    slot.status.textContent = error instanceof TypeError
+      ? `Could not reach Ollama for ${slot.label}. Check that it is running and allows requests from this webpage.`
+      : `Could not describe ${slot.label}: ${error.message}`;
   } finally {
-    if (currentSelection === selectionId) {
-      activeRequest = null;
-      describeButton.disabled = !selectedImage;
-      describeButton.textContent = 'Describe Image';
-    }
+    if (slot.request === controller) slot.request = null;
   }
-});
-
-// Image 2 has its own data and reading state. Ollama still uses Image 1 only.
-const secondImage = {
-  input: document.querySelector('#image-2-input'),
-  preview: document.querySelector('#image-2-preview'),
-  status: document.querySelector('#image-2-status'),
-  description: document.querySelector('#image-2-description'),
-  data: null,
-  reader: null,
-  selectionId: 0,
-};
-
-function resetSecondPreview() {
-  const message = document.createElement('p');
-  message.textContent = 'Your image preview will appear here.';
-  secondImage.preview.replaceChildren(message);
 }
 
-secondImage.input.addEventListener('change', () => {
-  const currentSelection = ++secondImage.selectionId;
-  if (secondImage.reader) secondImage.reader.abort();
-  secondImage.reader = null;
-  secondImage.data = null;
-  resetSecondPreview();
-  secondImage.description.textContent = '';
-
-  const file = secondImage.input.files[0];
-  if (!file) {
-    secondImage.status.textContent = 'Choose a JPG or PNG image to preview it.';
-    return;
+describeButton.addEventListener('click', async () => {
+  if (processing) return;
+  // Capture each picture and its destination together, in Image 1 / Image 2 order.
+  const jobs = images.filter((slot) => slot.data).map((slot) => ({
+    slot, data: slot.data, selection: slot.selectionId,
+  }));
+  if (!jobs.length) return;
+  processing = true;
+  updateButton();
+  try {
+    for (const job of jobs) {
+      // Wait for this request to finish before starting the next one.
+      await describeImage(job);
+    }
+  } finally {
+    processing = false;
+    updateButton();
   }
-  if (!['image/jpeg', 'image/png'].includes(file.type)) {
-    secondImage.status.textContent = 'This file cannot be used. Please choose a JPG or PNG image.';
-    secondImage.input.value = '';
-    return;
-  }
-
-  function showError() {
-    if (currentSelection !== secondImage.selectionId) return;
-    secondImage.reader = null;
-    secondImage.data = null;
-    resetSecondPreview();
-    secondImage.input.value = '';
-    secondImage.status.textContent = 'This image could not be read. Try another JPG or PNG image.';
-  }
-
-  const reader = new FileReader();
-  secondImage.reader = reader;
-  secondImage.status.textContent = 'Reading your image…';
-  reader.addEventListener('error', showError);
-  reader.addEventListener('load', () => {
-    if (currentSelection !== secondImage.selectionId) return;
-    secondImage.reader = null;
-    const dataUrl = reader.result;
-    const image = new Image();
-    image.alt = `Image 2 preview of ${file.name}`;
-    image.addEventListener('error', showError);
-    image.addEventListener('load', () => {
-      if (currentSelection !== secondImage.selectionId) return;
-      secondImage.data = {
-        name: file.name,
-        dataUrl,
-        base64: dataUrl.slice(dataUrl.indexOf(',') + 1),
-      };
-      secondImage.preview.replaceChildren(image);
-      secondImage.status.textContent = 'Image 2 ready. Descriptions for Image 2 are not connected yet.';
-    });
-    image.src = dataUrl;
-  });
-  reader.readAsDataURL(file);
 });
