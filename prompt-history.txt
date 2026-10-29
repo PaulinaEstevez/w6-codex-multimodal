@@ -8,4 +8,8 @@ prompt 3:
 Help me make a simple webpage using index.html, style.css, and main.js. Add a title, an image file input, a place for an image preview, a Describe Image button, a status message, and a place for the description. Make it easy to read and fit on a phone too. Only make the interface now. Do not add image preview code or connect Ollama yet. Explain what you changed. Do not commit or push.
 prompt 4:
 Now help me show a preview when I select a JPG or PNG image. Use FileReader and explain it in simple words. Keep the image data so we can send it to Ollama later. If I choose another image, replace the preview and clear the old description. Show a message if the file cannot be used or read. Do not connect Ollama yet. Do not commit or push.
+promopt 5:
+Before changing my code, show me how the image request to Ollama should look. Explain the images array, and false. Which part of the image data do we send? Where do we find the description in the answer?
+promopt 6:
+Now connect my Describe Image button to Ollama. Ask the model to describe the image in simple words. Show message.content on my page using textContent. Check if the request fails and show an error message. Keep the image preview. Explain the code. Do not commit or push.
 TASK 2 

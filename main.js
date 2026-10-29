@@ -2,10 +2,12 @@ const imageInput = document.querySelector('#image-input');
 const preview = document.querySelector('#image-preview');
 const statusMessage = document.querySelector('#status');
 const description = document.querySelector('#description');
+const describeButton = document.querySelector('#describe-button');
 
-// Keep both forms in memory for the future Ollama request. Nothing is sent yet.
+// The preview uses dataUrl; Ollama receives only the Base64 portion.
 let selectedImage = null; // { name, dataUrl, base64 }
 let activeReader = null;
+let activeRequest = null;
 let selectionId = 0;
 
 function showPlaceholder() {
@@ -16,6 +18,10 @@ function showPlaceholder() {
 
 imageInput.addEventListener('change', () => {
   const currentSelection = ++selectionId;
+  if (activeRequest) activeRequest.abort();
+  activeRequest = null;
+  describeButton.disabled = true;
+  describeButton.textContent = 'Describe Image';
   if (activeReader) activeReader.abort();
   activeReader = null;
   selectedImage = null;
@@ -65,10 +71,66 @@ imageInput.addEventListener('change', () => {
         base64: dataUrl.slice(dataUrl.indexOf(',') + 1),
       };
       preview.replaceChildren(image);
-      statusMessage.textContent = 'Image ready. Descriptions are not connected yet.';
+      describeButton.disabled = false;
+      statusMessage.textContent = 'Image ready. Click Describe Image to get a description.';
     });
     image.src = dataUrl;
   });
 
   reader.readAsDataURL(file);
+});
+
+describeButton.addEventListener('click', async () => {
+  if (!selectedImage || activeRequest) return;
+
+  const currentSelection = selectionId;
+  const controller = new AbortController();
+  activeRequest = controller;
+  describeButton.disabled = true;
+  describeButton.textContent = 'Describing…';
+  description.textContent = '';
+  statusMessage.textContent = 'Ollama is describing your image. This may take a moment…';
+
+  try {
+    const response = await fetch('http://localhost:11434/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'gemma3:4b',
+        messages: [{
+          role: 'user',
+          content: 'Describe this image in simple words.',
+          images: [selectedImage.base64],
+        }],
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama returned an error (HTTP ${response.status}).`);
+    }
+
+    const data = await response.json();
+    if (data.error) throw new Error(String(data.error));
+    if (typeof data.message?.content !== 'string' || !data.message.content.trim()) {
+      throw new Error('Ollama did not return a description. Please try again.');
+    }
+    if (currentSelection !== selectionId) return;
+
+    // Display the model's answer as plain text, never as HTML.
+    description.textContent = data.message.content;
+    statusMessage.textContent = 'Description ready.';
+  } catch (error) {
+    if (currentSelection !== selectionId) return;
+    statusMessage.textContent = error instanceof TypeError
+      ? 'Could not reach Ollama. Check that it is running and allows requests from this webpage.'
+      : `Could not describe the image: ${error.message}`;
+  } finally {
+    if (currentSelection === selectionId) {
+      activeRequest = null;
+      describeButton.disabled = !selectedImage;
+      describeButton.textContent = 'Describe Image';
+    }
+  }
 });
