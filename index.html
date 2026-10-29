@@ -15,6 +15,7 @@
         <p class="intro">Choose two pictures and get a simple description of each with Ollama.</p>
       </header>
 
+      <div class="image-columns">
       <section class="card" aria-labelledby="image-heading">
         <h2 id="image-heading">Image 1</h2>
         <label for="image-input">Choose Image 1</label>
@@ -25,13 +26,9 @@
           <p>Your image preview will appear here.</p>
         </div>
 
-        <button id="describe-button" type="button" aria-describedby="processing-status">Describe Images</button>
-        <p class="status" id="processing-status" role="status">Choose both images, then click Describe Images.</p>
         <p class="status" id="status" role="status">Choose a JPG or PNG image to preview it.</p>
-      </section>
 
-      <section class="card description-card" aria-labelledby="description-heading">
-        <h2 id="description-heading">Image 1 description</h2>
+        <h3 id="description-heading">Image 1 description</h3>
         <div id="description" class="description" aria-live="polite">
           <p>The image description will appear here.</p>
         </div>
@@ -46,14 +43,17 @@
           <p>Your image preview will appear here.</p>
         </div>
         <p class="status" id="image-2-status" role="status">Choose a JPG or PNG image to preview it.</p>
-      </section>
-
-      <section class="card description-card" aria-labelledby="image-2-description-heading">
-        <h2 id="image-2-description-heading">Image 2 description</h2>
+        <h3 id="image-2-description-heading">Image 2 description</h3>
         <div id="image-2-description" class="description" aria-live="polite">
           <p>The second image description will appear here.</p>
         </div>
       </section>
+      </div>
+
+      <div class="shared-controls">
+        <button id="describe-button" type="button" aria-describedby="processing-status">Describe Images</button>
+        <p class="status" id="processing-status" role="status">Choose both images, then click Describe Images.</p>
+      </div>
     </main>
   </body>
 </html>
