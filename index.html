@@ -18,15 +18,15 @@
       <section class="card" aria-labelledby="image-heading">
         <h2 id="image-heading">1. Choose your image</h2>
         <label for="image-input">Image file</label>
-        <input id="image-input" type="file" accept="image/*" aria-describedby="image-help">
-        <p class="hint" id="image-help">Choose an image from your computer or phone.</p>
+        <input id="image-input" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" aria-describedby="image-help">
+        <p class="hint" id="image-help">Choose a JPG or PNG image from your computer or phone.</p>
 
         <div class="image-preview" id="image-preview" role="region" aria-label="Image preview">
           <p>Your image preview will appear here.</p>
         </div>
 
         <button id="describe-button" type="button" disabled aria-describedby="status">Describe Image</button>
-        <p class="status" id="status" role="status">Interface only. Preview and descriptions are not connected yet.</p>
+        <p class="status" id="status" role="status">Choose a JPG or PNG image to preview it.</p>
       </section>
 
       <section class="card description-card" aria-labelledby="description-heading">
