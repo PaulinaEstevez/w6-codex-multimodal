@@ -1,3 +1,10 @@
 SETUP
 TASK 1 
+prompt 1:
+I need a webpage where I can choose an image, see it, and ask Ollama to describe it. Explain how the browser reads the image and sends it to Ollama. Explain what kind of model can understand images. Use simple words. Do not write code yet.
+prompt 2:
+These are my Ollama models:mistral:latest, qwen:latest,  gemma3:4b. Can any of them understand images? If not, help me download one that works on my Mac. Ask me about my computer if you need to. Help me check that Ollama is running. Do not change my project yet.
+prompt 3:
+Help me make a simple webpage using index.html, style.css, and main.js. Add a title, an image file input, a place for an image preview, a Describe Image button, a status message, and a place for the description. Make it easy to read and fit on a phone too. Only make the interface now. Do not add image preview code or connect Ollama yet. Explain what you changed. Do not commit or push.
+
 TASK 2 

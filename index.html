@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Describer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="main.js" defer></script>
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <p class="eyebrow">A closer look</p>
+        <h1>Image Describer</h1>
+        <p class="intro">Choose a picture and get a simple description with Ollama.</p>
+      </header>
+
+      <section class="card" aria-labelledby="image-heading">
+        <h2 id="image-heading">1. Choose your image</h2>
+        <label for="image-input">Image file</label>
+        <input id="image-input" type="file" accept="image/*" aria-describedby="image-help">
+        <p class="hint" id="image-help">Choose an image from your computer or phone.</p>
+
+        <div class="image-preview" id="image-preview" role="region" aria-label="Image preview">
+          <p>Your image preview will appear here.</p>
+        </div>
+
+        <button id="describe-button" type="button" disabled aria-describedby="status">Describe Image</button>
+        <p class="status" id="status" role="status">Interface only. Preview and descriptions are not connected yet.</p>
+      </section>
+
+      <section class="card description-card" aria-labelledby="description-heading">
+        <h2 id="description-heading">2. Read the description</h2>
+        <div id="description" class="description" aria-live="polite">
+          <p>The image description will appear here.</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
